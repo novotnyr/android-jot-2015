@@ -1,5 +1,6 @@
 package sk.upjs.ics.android.jot;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.AsyncQueryHandler;
@@ -12,6 +13,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.text.Editable;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -25,8 +27,9 @@ import android.widget.Toast;
 
 import sk.upjs.ics.android.jot.provider.Provider;
 import sk.upjs.ics.android.jot.provider.NoteContentProvider;
-import sk.upjs.ics.android.util.OnEnterPressedEditorActionListener;
+import sk.upjs.ics.android.util.Defaults;
 
+import static sk.upjs.ics.android.util.Defaults.DISMISS_ACTION;
 import static sk.upjs.ics.android.util.Defaults.NO_COOKIE;
 import static sk.upjs.ics.android.util.Defaults.NO_CURSOR;
 import static sk.upjs.ics.android.util.Defaults.NO_FLAGS;
@@ -54,18 +57,11 @@ public class MainActivity extends ActionBarActivity implements LoaderManager.Loa
         notesGridView = (GridView) findViewById(R.id.notesGridView);
         notesGridView.setAdapter(initializeAdapter());
         notesGridView.setOnItemClickListener(this);
-
-        newNoteEditText = (EditText) findViewById(R.id.newNoteTextView);
-        newNoteEditText.setOnEditorActionListener(new OnEnterPressedEditorActionListener() {
-            @Override
-            protected void onEnterPressed(TextView textView) {
-                onNoteAdded();
-            }
-        });
     }
 
-    private void onNoteAdded() {
-        String noteDescription = newNoteEditText.getText().toString();
+
+    private void insertIntoContentProvider(String noteDescription) {
+        Uri uri = NoteContentProvider.CONTENT_URI;
         ContentValues values = new ContentValues();
         values.put(Provider.Note.DESCRIPTION, noteDescription);
 
@@ -77,9 +73,23 @@ public class MainActivity extends ActionBarActivity implements LoaderManager.Loa
             }
         };
 
-        Uri uri = NoteContentProvider.CONTENT_URI;
-
         insertHandler.startInsert(INSERT_NOTE_TOKEN, NO_COOKIE, uri, values);
+    }
+
+    private void createNewNote() {
+        final EditText descriptionEditText = new EditText(this);
+        new AlertDialog.Builder(this)
+                .setTitle("Add a new note")
+                .setView(descriptionEditText)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String description = descriptionEditText.getText().toString();
+                        insertIntoContentProvider(description);
+                    }
+                })
+                .setNegativeButton("Cancel", DISMISS_ACTION)
+                .show();
     }
 
     private ListAdapter initializeAdapter() {
@@ -122,17 +132,12 @@ public class MainActivity extends ActionBarActivity implements LoaderManager.Loa
                         deleteNote(id);
                     }
                 })
-                .setNeutralButton("Close", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // do nothing, dismiss the dialog
-                    }
-                })
+                .setNegativeButton("Close", DISMISS_ACTION)
                 .show();
-
     }
 
     private void deleteNote(long id) {
+        Uri selectedNoteUri = ContentUris.withAppendedId(NoteContentProvider.CONTENT_URI, id);
         AsyncQueryHandler deleteHandler = new AsyncQueryHandler(getContentResolver()) {
             @Override
             protected void onDeleteComplete(int token, Object cookie, int result) {
@@ -140,8 +145,24 @@ public class MainActivity extends ActionBarActivity implements LoaderManager.Loa
                         .show();
             }
         };
-        Uri selectedNoteUri = ContentUris.withAppendedId(NoteContentProvider.CONTENT_URI, id);
         deleteHandler.startDelete(DELETE_NOTE_TOKEN, NO_COOKIE, selectedNoteUri,
                 NO_SELECTION, NO_SELECTION_ARGS);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_new) {
+            createNewNote();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

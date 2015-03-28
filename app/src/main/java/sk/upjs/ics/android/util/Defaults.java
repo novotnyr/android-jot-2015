@@ -1,5 +1,6 @@
 package sk.upjs.ics.android.util;
 
+import android.content.DialogInterface;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -39,5 +40,7 @@ public interface Defaults {
     public static final String NO_TYPE = null;
 
     public static final Uri NO_URI = null;
+
+    public static final DialogInterface.OnClickListener DISMISS_ACTION = null;
 }
 
