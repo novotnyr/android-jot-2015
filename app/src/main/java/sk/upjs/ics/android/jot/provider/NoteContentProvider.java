@@ -1,6 +1,7 @@
 package sk.upjs.ics.android.jot.provider;
 
 import android.content.ContentProvider;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.UriMatcher;
@@ -36,6 +37,9 @@ public class NoteContentProvider extends ContentProvider {
 
     private static final int URI_MATCH_NOTES = 0;
     private static final int URI_MATCH_NOTE_BY_ID = 1;
+
+    private static final String MIME_TYPE_NOTES = ContentResolver.CURSOR_DIR_BASE_TYPE + "/vnd." + AUTHORITY + "." + Note.TABLE_NAME;
+    private static final String MIME_TYPE_SINGLE_NOTE = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd." + AUTHORITY + "." + Note.TABLE_NAME;
 
     private UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
@@ -118,6 +122,12 @@ public class NoteContentProvider extends ContentProvider {
 
     @Override
     public String getType(Uri uri) {
+        switch(uriMatcher.match(uri)) {
+            case URI_MATCH_NOTE_BY_ID:
+                return MIME_TYPE_SINGLE_NOTE;
+            case URI_MATCH_NOTES:
+                return MIME_TYPE_NOTES;
+        }
         return NO_TYPE;
     }
 
