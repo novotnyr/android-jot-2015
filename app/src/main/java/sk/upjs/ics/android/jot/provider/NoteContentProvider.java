@@ -115,6 +115,7 @@ public class NoteContentProvider extends ContentProvider {
                 int affectedRows = databaseHelper.getWritableDatabase()
                         .delete(Note.TABLE_NAME, Note._ID + " = " + id, Defaults.NO_SELECTION_ARGS);
                 getContext().getContentResolver().notifyChange(CONTENT_URI, NO_CONTENT_OBSERVER);
+                return affectedRows;
             default:
                 return 0;
         }
